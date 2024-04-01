@@ -106,7 +106,7 @@ impl TextGeneration {
                     }
                 }
             };
-            let logits = logits.squeeze(0)?.to_dtype(DType::F32)?;
+            let logits = logits.squeeze(0)?.to_dtype(DType::F16)?;
             let logits = if self.repeat_penalty == 1. {
                 logits
             } else {
@@ -209,9 +209,9 @@ pub fn load_image<P: AsRef<std::path::Path>>(p: P) -> candle::Result<Tensor> {
     let data = Tensor::from_vec(data, (378, 378, 3), &Device::Cpu)?.permute((2, 0, 1))?;
     let mean = Tensor::new(&[0.5f32, 0.5, 0.5], &Device::Cpu)?.reshape((3, 1, 1))?;
     let std = Tensor::new(&[0.5f32, 0.5, 0.5], &Device::Cpu)?.reshape((3, 1, 1))?;
-    (data.to_dtype(candle::DType::F32)? / 255.)?
-        .broadcast_sub(&mean)?
-        .broadcast_div(&std)
+    (data.to_dtype(candle::DType::F16)? / 255.)?
+        .broadcast_sub(&mean.to_dtype(candle::DType::F16)?)?
+        .broadcast_div(&std.to_dtype(candle::DType::F16)?)
 }
 
 #[tokio::main]
@@ -288,7 +288,7 @@ async fn main() -> anyhow::Result<()> {
         Model::Quantized(model)
     } else {
         let vb =
-            unsafe { VarBuilder::from_mmaped_safetensors(&[model_file], DType::F32, &device)? };
+            unsafe { VarBuilder::from_mmaped_safetensors(&[model_file], DType::F16, &device)? };
         let model = moondream::Model::new(&config, vb)?;
         Model::Moondream(model)
     };

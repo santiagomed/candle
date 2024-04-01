@@ -135,7 +135,9 @@ fn get_mask(size: usize, device: &Device) -> Result<Tensor> {
 
 fn masked_fill(on_false: &Tensor, mask: &Tensor, on_true: f32) -> Result<Tensor> {
     let shape = mask.shape();
-    let on_true = Tensor::new(on_true, on_false.device())?.broadcast_as(shape.dims())?;
+    let on_true = Tensor::new(on_true, on_false.device())?
+        .broadcast_as(shape.dims())?
+        .to_dtype(DType::F16)?;
     let m = mask.where_cond(&on_true, on_false)?;
     Ok(m)
 }
@@ -153,9 +155,9 @@ impl RotaryEmbedding {
             .map(|i| 1f32 / 10000f32.powf(i as f32 / dim as f32))
             .collect();
         let inv_freq_len = inv_freq.len();
-        let inv_freq = Tensor::from_vec(inv_freq, (1, inv_freq_len), dev)?;
+        let inv_freq = Tensor::from_vec(inv_freq, (1, inv_freq_len), dev)?.to_dtype(DType::F16)?;
         let t = Tensor::arange(0u32, max_seq_len as u32, dev)?
-            .to_dtype(DType::F32)?
+            .to_dtype(DType::F16)?
             .reshape((max_seq_len, 1))?;
         let freqs = t.matmul(&inv_freq)?;
         Ok(Self {
@@ -251,7 +253,7 @@ impl Module for CausalLMHead {
     fn forward(&self, xs: &Tensor) -> Result<Tensor> {
         xs.apply(&self.ln)?
             .apply(&self.linear)?
-            .to_dtype(DType::F32)
+            .to_dtype(DType::F16)
     }
 }
 
