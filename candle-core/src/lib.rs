@@ -47,7 +47,7 @@ mod custom_op;
 mod device;
 pub mod display;
 mod dtype;
-mod dummy_cuda_backend;
+pub mod dummy_cuda_backend;
 mod dummy_metal_backend;
 pub mod error;
 mod indexer;
@@ -63,6 +63,7 @@ pub mod quantized;
 pub mod safetensors;
 pub mod scalar;
 pub mod shape;
+mod sort;
 mod storage;
 mod strided_index;
 mod tensor;
@@ -88,10 +89,12 @@ pub use tensor::{Tensor, TensorId};
 pub use variable::Var;
 
 #[cfg(feature = "cuda")]
-pub use cuda_backend::{CudaDevice, CudaStorage};
+pub use cuda_backend as cuda;
 
 #[cfg(not(feature = "cuda"))]
-pub use dummy_cuda_backend::{CudaDevice, CudaStorage};
+pub use dummy_cuda_backend as cuda;
+
+pub use cuda::{CudaDevice, CudaStorage};
 
 #[cfg(feature = "metal")]
 pub use metal_backend::{MetalDevice, MetalError, MetalStorage};
